@@ -37,3 +37,6 @@ class Actor(nn.Module):
             x = F.relu(hidden_layer(x))
         x = self.output_layer(x)
         return x
+
+class Critic(nn.Module):
+    def __init__(self, state_size, action_size, seed, hidden_dims = (256, )):
