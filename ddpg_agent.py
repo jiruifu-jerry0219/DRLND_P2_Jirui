@@ -3,7 +3,7 @@ import random
 import copy
 from collections import namedtuple, deque
 
-from model import Actor, Cricit
+from model import Actor, Critic
 
 import torch
 import torch.nn.functional as F
@@ -16,7 +16,7 @@ BATCH_SIZE: minibatch size for experience replay
 GAMMA: discount factor
 TAU: eligibility trace for updating the target
 LR_ACTOR: learning rate for actor network
-LR_CRITIC: learning rate for cricit network
+LR_CRITIC: learning rate for critic network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
 BUFFER_SIZE = int(1e5)
@@ -58,7 +58,7 @@ class Agent():
                                 action_size = self.action_size,
                                 seed = self.random_seed,
                                 hidden_dims = (256, 128, 64)).to(device)
-        self.cricit_target = Critic(self.state_size,
+        self.critic_target = Critic(self.state_size,
                                 action_size = self.action_size,
                                 seed = self.random_seed,
                                 hidden_dims = (256, 128, 64)).to(device)

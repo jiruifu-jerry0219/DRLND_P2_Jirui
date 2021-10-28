@@ -8,7 +8,7 @@ import torch.nn.functional as F
 # Initilize the weight of target and main network
 def finit(size, fanin = None):
     fanin = fanin or size[0]
-    lim = 1 ./ np.sqrt(fanin)
+    lim = 1. / np.sqrt(fanin)
     return torch.Tensor(size).uniform_(-lim, lim)
 
 # Construct the Actor network
@@ -24,7 +24,7 @@ class Actor(nn.Module):
     def __init__(self, state_size, action_size, seed, hidden_dims = (256,)):
         super(Actor, self).__init__()
 
-        self.seed = touch.mutal_seed(seed)
+        self.seed = torch.manual_seed(seed)
         self.input_layer = nn.Linear(
             state_size, hidden_dims[0]
         )
@@ -38,7 +38,7 @@ class Actor(nn.Module):
     def network_reset(self):
         self.input_layer.weight.data = finit(self.input_layer.weight.data.size())
         self.output_layer.weight.data = finit(self.output_layer.weight.data.size())
-        for i in len(self.hidden_layers):
+        for i in range(len(self.hidden_layers)):
             self.hidden_layers[i].weight.data = finit(self.hidden_layers[i].weight.data.size())
 
     def forward(self, state):
@@ -49,9 +49,10 @@ class Actor(nn.Module):
         return F.tanh(x)
 
 class Critic(nn.Module):
-    def __init__(self, state_size, fcs_size = 400, action_size, seed, hidden_dims = (256, )):
+
+    def __init__(self, state_size, action_size, seed, fcs_size = 400, hidden_dims = (256,)):
         super(Critic, self).__init__()
-        self.seed = touch.mutal.seed(seed)
+        self.seed = torch.manual_seed(seed)
         self.pre_layer = nn.Linear(state_size, fcs_size)
         self.input_layer = nn.Linear(fcs_size + action_size, hidden_dims[0])
         self.hidden_layers = nn.ModuleList()
@@ -65,7 +66,7 @@ class Critic(nn.Module):
         self.pre_layer.weight.data = finit(self.pre_layer.weight.data.size())
         self.input_layer.weight.data = finit(self.input_layer.weight.data.size())
         self.output_layer.weight.data = finit(self.output_layer.weight.data.size())
-        for i in len(self.hidden_layer):
+        for i in range(len(self.hidden_layers)):
             self.hidden_layers[i].weight.data = finit(self.hidden_layers[i].weight.data.size())
 
     def forward(self, state, action):
