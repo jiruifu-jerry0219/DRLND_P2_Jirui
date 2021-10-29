@@ -72,6 +72,7 @@ class Critic(nn.Module):
     def forward(self, state, action):
         x_pre = F.relu(self.pre_layer(state))
         x = torch.cat((x_pre, action), dim = 1)
+        x = F.relu(self.input_layer(x))
         for hidden_layer in self.hidden_layers:
             x = F.relu(hidden_layer(x))
 
