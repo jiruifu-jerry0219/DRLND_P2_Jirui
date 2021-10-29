@@ -16,7 +16,7 @@ BATCH_SIZE: minibatch size for experience replay
 GAMMA: discount factor
 TAU: eligibility trace for updating the target
 LR_ACTOR: learning rate for actor network
-LR_CRITIC: learning rate for critic network
+LR_CRITIC: learning rate for cricit network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
 BUFFER_SIZE = int(1e5)
@@ -45,23 +45,19 @@ class Agent():
         # Define the actor network
         self.actor_local = Actor(self.state_size,
                                 self.action_size,
-                                self.random_seed,
-                                hidden_dims = (256, 128, 64)).to(device)
+                                self.random_seed).to(device)
         self.actor_target = Actor(self.state_size,
                                 self.action_size,
-                                self.random_seed,
-                                hidden_dims = (256, 128, 64)).to(device)
+                                self.random_seed).to(device)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr = LR_ACTOR)
 
         # Define the critic network
         self.critic_local = Critic(self.state_size,
                                 action_size = self.action_size,
-                                seed = self.random_seed,
-                                hidden_dims = (256, 128, 64)).to(device)
+                                seed = self.random_seed).to(device)
         self.critic_target = Critic(self.state_size,
                                 action_size = self.action_size,
-                                seed = self.random_seed,
-                                hidden_dims = (256, 128, 64)).to(device)
+                                seed = self.random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr = LR_CRITIC)
 
         # Random noise for exploration
@@ -81,7 +77,7 @@ class Agent():
             self.learn(experience, GAMMA)
 
     def act(self, state, add_noise = True):
-        state = torch.from_numpy(state).fload().to(device)
+        state = torch.from_numpy(state).float().to(device)
         self.actor_local.eval()
         with torch.no_grad():
             action = self.actor_local(state).cpu().data.numpy()
@@ -114,7 +110,7 @@ class Agent():
         # Compute Q targets for current state (y_i)
         Q_targets = rewards + (gamma * Q_target_next * (1 - dones))
         # Compute critic loss
-        Q_expected = self.critic_local(states, actions)
+        Q_expected = self.critic_local(state, actions)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
         # Minimize the loss
         self.critic_optimizer.zero_grad()
@@ -123,8 +119,8 @@ class Agent():
 
         # ------------update actor---------------------#
         # Compute actor loss
-        action_pred = self.actor_local(states)
-        actor_loss = -self.critic_local(states, action_pred).mean()
+        action_pred = self.actor_local(state)
+        actor_loss = -self.critic_local(state, action_pred).mean()
         # Minimize the loss
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
