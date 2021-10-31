@@ -2,17 +2,17 @@
 # coding: utf-8
 
 # # Continuous Control
-# 
+#
 # ---
-# 
+#
 # You are welcome to use this coding environment to train your agent for the project.  Follow the instructions below to get started!
-# 
+#
 # ### 1. Start the Environment
-# 
+#
 # Run the next code cell to install a few packages.  This line will take a few minutes to run!
 
-# The environments corresponding to both versions of the environment are already saved in the Workspace and can be accessed at the file paths provided below.  
-# 
+# The environments corresponding to both versions of the environment are already saved in the Workspace and can be accessed at the file paths provided below.
+#
 # Please select one of the two options below for loading the environment.
 
 # In[1]:
@@ -39,7 +39,7 @@ brain = env.brains[brain_name]
 
 
 # ### 2. Examine the State and Action Spaces
-# 
+#
 # Run the code cell below to print some information about the environment.
 
 # In[3]:
@@ -56,7 +56,7 @@ print('Number of agents:', num_agents)
 action_size = brain.vector_action_space_size
 print('Size of each action:', action_size)
 
-# examine the state space 
+# examine the state space
 states = env_info.vector_observations
 state_size = states.shape[1]
 print('There are {} agents. Each observes a state with length: {}'.format(states.shape[0], state_size))
@@ -64,15 +64,15 @@ print('The state for the first agent looks like:', states[0])
 
 
 # ### 3. Take Random Actions in the Environment
-# 
+#
 # In the next code cell, you will learn how to use the Python API to control the agent and receive feedback from the environment.
-# 
+#
 # Note that **in this coding environment, you will not be able to watch the agents while they are training**, and you should set `train_mode=True` to restart the environment.
 
 # In[5]:
 
 
-# env_info = env.reset(train_mode=True)[brain_name]      # reset the environment    
+# env_info = env.reset(train_mode=True)[brain_name]      # reset the environment
 # states = env_info.vector_observations                  # get the current state (for each agent)
 # scores = np.zeros(num_agents)                          # initialize the score (for each agent)
 # while True:
@@ -98,14 +98,14 @@ print('The state for the first agent looks like:', states[0])
 
 
 # ### 4. It's Your Turn!
-# 
+#
 # Now it's your turn to train your own agent to solve the environment!  A few **important notes**:
 # - When training the environment, set `train_mode=True`, so that the line for resetting the environment looks like the following:
 # ```python
 # env_info = env.reset(train_mode=True)[brain_name]
 # ```
 # - To structure your work, you're welcome to work directly in this Jupyter notebook, or you might like to start over with a new file!  You can see the list of files in the workspace by clicking on **_Jupyter_** in the top left corner of the notebook.
-# - In this coding environment, you will not be able to watch the agents while they are training.  However, **_after training the agents_**, you can download the saved model weights to watch the agents on your own machine! 
+# - In this coding environment, you will not be able to watch the agents while they are training.  However, **_after training the agents_**, you can download the saved model weights to watch the agents on your own machine!
 
 # #### 4.1 Training with DDPG
 
@@ -136,7 +136,7 @@ agent = Agent(state_size, action_size, random_seed=0)
 # In[6]:
 
 
-def ddpg(n_episodes = 2000, max_t = 700):
+def ddpg(n_episodes = 5000, max_t = 700):
     scores_deque = deque(maxlen = 100)
     scores = []
     max_score = -np.Inf
@@ -185,10 +185,7 @@ plt.plot(np.arange(1, len(scores) + 1), scores)
 plt.ylabel('Score')
 plt.xlabel('Episode #')
 plt.show()
+plt.savefig("ResultDDPG.png")
 
 
 # In[ ]:
-
-
-
-
