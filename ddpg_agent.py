@@ -28,6 +28,8 @@ LR_CRITIC = 1e-3
 WEIGHT_DECAY = 0
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print('Current device is:', device)
+print('The GPU model is: ', torch.cuda.get_device_name(0))
 
 class Agent():
     def __init__(self, state_size, action_size, random_seed):
