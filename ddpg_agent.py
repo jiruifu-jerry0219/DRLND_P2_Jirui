@@ -48,22 +48,22 @@ class Agent():
         self.actor_local = Actor(self.state_size,
                                 self.action_size,
                                 self.random_seed,
-                                hidden_dims = (256,128, 64, 32)).to(device)
+                                hidden_dims = (256, 64, 16)).to(device)
         self.actor_target = Actor(self.state_size,
                                 self.action_size,
                                 self.random_seed,
-                                hidden_dims = (256,128, 64, 32)).to(device)
+                                hidden_dims = (256, 64, 16)).to(device)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr = LR_ACTOR)
 
         # Define the critic network
         self.critic_local = Critic(self.state_size,
                                 action_size = self.action_size,
                                 seed = self.random_seed,
-                                hidden_dims = (128, 32)).to(device)
+                                hidden_dims = (512, 256, 128, 64, 32)).to(device)
         self.critic_target = Critic(self.state_size,
                                 action_size = self.action_size,
                                 seed = self.random_seed,
-                                hidden_dims = (128, 32)).to(device)
+                                hidden_dims = (512, 256, 128, 64, 32)).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr = LR_CRITIC)
 
         # Random noise for exploration
