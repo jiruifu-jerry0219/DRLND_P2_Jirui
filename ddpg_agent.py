@@ -19,8 +19,8 @@ LR_ACTOR: learning rate for actor network
 LR_CRITIC: learning rate for cricit network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
-BUFFER_SIZE = int(1e5)
-BATCH_SIZE = 128
+BUFFER_SIZE = int(1e9)
+BATCH_SIZE = 512
 GAMMA = 0.99
 TAU = 1e-3
 LR_ACTOR = 1e-4
@@ -45,19 +45,23 @@ class Agent():
         # Define the actor network
         self.actor_local = Actor(self.state_size,
                                 self.action_size,
-                                self.random_seed).to(device)
+                                self.random_seed,
+                                hidden_dims = (256,126, 64, 32)).to(device)
         self.actor_target = Actor(self.state_size,
                                 self.action_size,
-                                self.random_seed).to(device)
+                                self.random_seed,
+                                hidden_dims = (256,126, 64, 32)).to(device)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr = LR_ACTOR)
 
         # Define the critic network
         self.critic_local = Critic(self.state_size,
                                 action_size = self.action_size,
-                                seed = self.random_seed).to(device)
+                                seed = self.random_seed,
+                                hidden_dims = (256,126, 64, 32)).to(device)
         self.critic_target = Critic(self.state_size,
                                 action_size = self.action_size,
-                                seed = self.random_seed).to(device)
+                                seed = self.random_seed,
+                                hidden_dims = (256,126, 64, 32)).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr = LR_CRITIC)
 
         # Random noise for exploration
