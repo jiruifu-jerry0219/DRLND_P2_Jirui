@@ -20,11 +20,11 @@ LR_CRITIC: learning rate for cricit network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
 BUFFER_SIZE = int(1e5)
-BATCH_SIZE =128
+BATCH_SIZE =100
 GAMMA = 0.99
-TAU = 1e-2
-LR_ACTOR = 5e-4
-LR_CRITIC = 5e-3
+TAU = 5e-3
+LR_ACTOR = 1e-2
+LR_CRITIC = 1e-2
 WEIGHT_DECAY = 0
 
 L1_NEURONS = 768
@@ -152,9 +152,14 @@ class Agent():
         self.actor_optimizer.step()
 
         # ------------update target network------------#
-        if steps % 10  == 0: #update the target network for every six steps
-            self.soft_update(self.critic_local, self.critic_target, TAU)
-            self.soft_update(self.actor_local, self.actor_target, TAU)
+        """Update target network in each step"""
+        self.soft_update(self.critic_local, self.critic_target, TAU)
+        self.soft_update(self.actor_local, self.actor_target, TAU)
+
+        """Update target network once a certain number of steps"""
+        # if steps % 10  == 0: #update the target network for every six steps
+        #     self.soft_update(self.critic_local, self.critic_target, TAU)
+        #     self.soft_update(self.actor_local, self.actor_target, TAU)
 
     def soft_update(self, local_model, target_model, t):
         for target_params, local_params in zip(target_model.parameters(), local_model.parameters()):

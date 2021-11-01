@@ -64,12 +64,18 @@ import torch.optim as optim
 
 from ddpg_agent import Agent
 from time import time
+import gym
+
+
+
 
 
 # In[5]:
 
 
 agent = Agent(state_size, action_size, random_seed=0)
+
+
 
 
 # In[6]:
@@ -80,6 +86,8 @@ max_t = 1000
 print_every = 100
 min_mean_score = 30
 
+
+
 scores_deque = deque(maxlen = print_every)
 scores = []
 max_score = -np.Inf
@@ -87,29 +95,34 @@ for i_episode in range(1, n_episodes + 1):
     env_info = env.reset(train_mode = True)[brain_name]
     state = env_info.vector_observations
 
+    state = env.reset()
 
     agent.reset()
-    score = np.zeros(num_agents)
+    # score = np.zeros(num_agents)
+    score = np.zeros(1)
+
     for t in range(max_t):
         action = agent.act(state)
+
         env_info = env.step(action)[brain_name]
         next_state = env_info.vector_observations
-        reward = env_info.rewards
-        done = env_info.local_done
-        score += reward
 
-        agent.step(state, action, reward, next_state, done, t)
+        rewards = env_info.rewards
+
+        done = env_info.local_done
+
+        score += rewards
+
+        agent.step(state, action, rewards, next_state, done, t)
 
         state = next_state
 
         if np.any(done): #for multiagent case, if single agent just use "if done:"
             break
-
-
     scores_deque.append(np.mean(score))
     scores.append(np.mean(score))
 
-    print('\rEpisode {}\t with Average Score: {:.2f}'.format(i_episode, np.mean(scores_deque)), end="")
+    print('\rEpisode {}\tThe average score of this episode: {:.2f}'.format(i_episode, np.mean(score)), end="")
     torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
     torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
 
@@ -121,16 +134,6 @@ for i_episode in range(1, n_episodes + 1):
         torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
         torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
         break
-
-
-
-
-#     if i_episode % print_every == 0:
-#         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
-#     if np.mean(scores[-100:]) >= min_mean_score:
-#         print('\nEnvironment solved in {} episodes', format(i_episode))
-#         torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
-#         torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
 
 
 
