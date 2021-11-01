@@ -1,80 +1,86 @@
-#Neural Network Model
 import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Initilize the weight of target and main network
-def finit(layer):
+def hidden_init(layer):
     fan_in = layer.weight.data.size()[0]
     lim = 1. / np.sqrt(fan_in)
     return (-lim, lim)
 
-# Construct the Actor network
 class Actor(nn.Module):
-    """Actor (Policy) Network
-    Parameters
-    ==========
-    state_size(int): Dimension of the state space
-    action_size(int): Dimension of the action space
-    seed(int): Random seed
-    hidden_dims (tuple): Size of hidden layers
-    """
-    def __init__(self, state_size, action_size, seed, hidden_dims = (256,)):
+    """Actor (Policy) Model."""
+
+    def __init__(self, state_size, action_size, seed, fc1_units=400, fc2_units=300, fc3_units=300, fc4_units=300):
+        """Initialize parameters and build model.
+        Params
+        ======
+            state_size (int): Dimension of each state
+            action_size (int): Dimension of each action
+            seed (int): Random seed
+            fc1_units (int): Number of nodes in first hidden layer
+            fc2_units (int): Number of nodes in second hidden layer
+        """
         super(Actor, self).__init__()
-
         self.seed = torch.manual_seed(seed)
-        self.input_layer = nn.Linear(
-            state_size, hidden_dims[0]
-        )
-        self.hidden_layers = nn.ModuleList()
-        for i in range(len(hidden_dims) - 1):
-            hidden_layer = nn.Linear(hidden_dims[i], hidden_dims[i + 1])
-            self.hidden_layers.append(hidden_layer)
-        self.output_layer = nn.Linear(hidden_dims[-1], action_size)
-        self.network_reset()
+        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc2 = nn.Linear(fc1_units, fc2_units)
+        self.fc3 = nn.Linear(fc2_units, fc3_units)
+        self.fc4 = nn.Linear(fc3_units, fc4_units)
+        self.fc5 = nn.Linear(fc4_units, action_size)
+        self.reset_parameters()
 
-    def network_reset(self):
-        self.input_layer.weight.data.uniform_(*finit(self.input_layer))
-        self.output_layer.weight.data.uniform_(*finit(self.output_layer))
-        for i in range(len(self.hidden_layers)):
-            self.hidden_layers[i].weight.data.uniform_(*finit(self.hidden_layers[i]))
+    def reset_parameters(self):
+        self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
+        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
+        self.fc3.weight.data.uniform_(*hidden_init(self.fc3))
+        self.fc4.weight.data.uniform_(*hidden_init(self.fc4))
+        self.fc5.weight.data.uniform_(-3e-3, 3e-3)
 
     def forward(self, state):
-        x = F.relu(self.input_layer(state))
-        for hidden_layer in self.hidden_layers:
-            x = F.relu(hidden_layer(x))
-        x = self.output_layer(x)
-        return torch.tanh(x)
+        """Build an actor (policy) network that maps states -> actions."""
+        x = F.relu(self.fc1(state))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = F.relu(self.fc4(x))
+        return F.tanh(self.fc5(x))
+
 
 class Critic(nn.Module):
+    """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size, seed, fcs_size = 400, hidden_dims = (256,)):
+    def __init__(self, state_size, action_size, seed, fc1_units=400, fc2_units=300, fc3_units=300, fc4_units=300):
+        """Initialize parameters and build model.
+        Params
+        ======
+            state_size (int): Dimension of each state
+            action_size (int): Dimension of each action
+            seed (int): Random seed
+            fcs1_units (int): Number of nodes in the first hidden layer
+            fc2_units (int): Number of nodes in the second hidden layer
+        """
         super(Critic, self).__init__()
         self.seed = torch.manual_seed(seed)
-        self.pre_layer = nn.Linear(state_size, fcs_size)
-        self.input_layer = nn.Linear(fcs_size + action_size, hidden_dims[0])
-        self.hidden_layers = nn.ModuleList()
-        for i in range(len(hidden_dims) - 1):
-            hidden_layer = nn.Linear(hidden_dims[i], hidden_dims[i + 1])
-            self.hidden_layers.append(hidden_layer)
-        self.output_layer = nn.Linear(hidden_dims[-1], 1)
-        self.network_reset()
+        self.fc1 = nn.Linear(state_size, fc1_units)
+        self.fc2 = nn.Linear(fc1_units+action_size, fc2_units)
+        self.fc3 = nn.Linear(fc2_units, fc3_units)
+        self.fc4 = nn.Linear(fc3_units, fc4_units)
+        self.fc5 = nn.Linear(fc4_units, 1)
+        self.reset_parameters()
 
-    def network_reset(self):
-        self.pre_layer.weight.data.uniform_(*finit(self.pre_layer))
-        self.input_layer.weight.data.uniform_(*finit(self.input_layer))
-        self.output_layer.weight.data.uniform_(*finit(self.output_layer))
-        for i in range(len(self.hidden_layers)):
-            self.hidden_layers[i].weight.data.uniform_(*finit(self.hidden_layers[i]))
+    def reset_parameters(self):
+        self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
+        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
+        self.fc3.weight.data.uniform_(*hidden_init(self.fc3))
+        self.fc4.weight.data.uniform_(*hidden_init(self.fc4))
+        self.fc5.weight.data.uniform_(-3e-3, 3e-3)
 
     def forward(self, state, action):
-        x_pre = F.relu(self.pre_layer(state))
-        x = torch.cat((x_pre, action), dim = 1)
-        x = F.relu(self.input_layer(x))
-        for hidden_layer in self.hidden_layers:
-            x = F.relu(hidden_layer(x))
-
-        x = self.output_layer(x)
-        return x
+        """Build a critic (value) network that maps (state, action) pairs -> Q-values."""
+        xs = F.relu(self.fc1(state))
+        x = torch.cat((xs, action), dim=1)
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = F.relu(self.fc4(x))
+        return self.fc5(x)

@@ -19,13 +19,18 @@ LR_ACTOR: learning rate for actor network
 LR_CRITIC: learning rate for cricit network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
-BUFFER_SIZE = int(1e6)
+BUFFER_SIZE = int(1e5)
 BATCH_SIZE =128
 GAMMA = 0.99
-TAU = 1e-3
-LR_ACTOR = 1e-4
-LR_CRITIC = 1e-3
+TAU = 1e-2
+LR_ACTOR = 5e-4
+LR_CRITIC = 5e-3
 WEIGHT_DECAY = 0
+
+L1_NEURONS = 768
+L2_NEURONS = 512
+L3_NEURONS = 384
+L4_NEURONS = 256
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Current device is:', device)
@@ -45,27 +50,36 @@ class Agent():
         self.random_seed = random_seed
 
         # Define the actor network
-        self.actor_local = Actor(self.state_size,
-                                self.action_size,
-                                self.random_seed,
-                                hidden_dims = (400, 300, 200)).to(device)
-        self.actor_target = Actor(self.state_size,
-                                self.action_size,
-                                self.random_seed,
-                                hidden_dims = (400, 300, 200)).to(device)
+
+        # self.actor_local = Actor(self.state_size,
+        #                         self.action_size,
+        #                         self.random_seed,
+        #                         hidden_dims = (768, 512, 384, 256)).to(device)
+        # self.actor_target = Actor(self.state_size,
+        #                         self.action_size,
+        #                         self.random_seed,
+        #                         hidden_dims = (768, 512, 384, 256)).to(device)
+
+        self.actor_local = Actor(state_size, action_size, random_seed, L1_NEURONS, L2_NEURONS, L3_NEURONS, L4_NEURONS).to(device)
+        self.actor_target = Actor(state_size, action_size, random_seed, L1_NEURONS, L2_NEURONS, L3_NEURONS, L4_NEURONS).to(device)
+
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr = LR_ACTOR)
 
         # Define the critic network
-        self.critic_local = Critic(self.state_size,
-                                action_size = self.action_size,
-                                seed = self.random_seed,
-                                fcs_size =  400,
-                                hidden_dims = (300, 200)).to(device)
-        self.critic_target = Critic(self.state_size,
-                                action_size = self.action_size,
-                                seed = self.random_seed,
-                                fcs_size = 400,
-                                hidden_dims = (300, 200)).to(device)
+        # self.critic_local = Critic(self.state_size,
+        #                         action_size = self.action_size,
+        #                         seed = self.random_seed,
+        #                         fcs_size = 768,
+        #                         hidden_dims = (512, 384, 256)).to(device)
+        # self.critic_target = Critic(self.state_size,
+        #                         action_size = self.action_size,
+        #                         seed = self.random_seed,
+        #                         fcs_size = 768,
+        #                         hidden_dims = (512, 384, 256)).to(device)
+
+        self.critic_local = Critic(state_size, action_size, random_seed, L1_NEURONS, L2_NEURONS, L3_NEURONS, L4_NEURONS).to(device)
+        self.critic_target = Critic(state_size, action_size, random_seed, L1_NEURONS, L2_NEURONS, L3_NEURONS, L4_NEURONS).to(device)
+
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr = LR_CRITIC)
 
         # Random noise for exploration
@@ -74,7 +88,7 @@ class Agent():
         # Replay BUFFER
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
 
-    def step(self, state, action, reward, next_state, done):
+    def step(self, state, action, reward, next_state, done, steps):
         """Save experience to replay buffer then pick a previous experience
         from the replay buffer to learn"""
         self.memory.add(state, action, reward, next_state, done)
@@ -82,23 +96,26 @@ class Agent():
         # Learn the optimal policy if samples are enough
         if len(self.memory) > BATCH_SIZE:
             experience = self.memory.sample()
-            self.learn(experience, GAMMA)
+            self.learn(experience, GAMMA, steps)
 
-    def act(self, state, add_noise = True):
-        state = torch.from_numpy(state).float().to(device)
-        self.actor_local.eval()
-        with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy()
-        self.actor_local.train()
+    def act(self, states, add_noise = True):
+        actions = []
+        for state in states:
+            state = torch.from_numpy(state).float().to(device)
+            self.actor_local.eval()
+            with torch.no_grad():
+                action = self.actor_local(state).cpu().data.numpy()
+            self.actor_local.train()
 
-        if add_noise:
-            action += self.noise.sample()
-        return np.clip(action, -1, 1)
+            if add_noise:
+                action += self.noise.sample()
+            actions.append(np.clip(action, -1, 1))
+        return actions
 
     def reset(self):
         self.noise.reset()
 
-    def learn(self, experiences, gamma):
+    def learn(self, experiences, gamma, steps):
         """ Update policy and value parameters using given batch of experience tuples.
         Q_target = r + gamma * critic_target(next_state, actor_target(next_state))
         where:
@@ -135,8 +152,9 @@ class Agent():
         self.actor_optimizer.step()
 
         # ------------update target network------------#
-        self.soft_update(self.critic_local, self.critic_target, TAU)
-        self.soft_update(self.actor_local, self.actor_target, TAU)
+        if steps % 10  == 0: #update the target network for every six steps
+            self.soft_update(self.critic_local, self.critic_target, TAU)
+            self.soft_update(self.actor_local, self.actor_target, TAU)
 
     def soft_update(self, local_model, target_model, t):
         for target_params, local_params in zip(target_model.parameters(), local_model.parameters()):
