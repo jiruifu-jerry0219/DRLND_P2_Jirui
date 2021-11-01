@@ -136,44 +136,50 @@ agent = Agent(state_size, action_size, random_seed=0)
 # In[6]:
 
 
-def ddpg(n_episodes = 5000, max_t = 700):
-    scores_deque = deque(maxlen = 100)
-    scores = []
-    max_score = -np.Inf
-    for i_episode in range(1, n_episodes + 1):
-        time0 = time()
-        env_info = env.reset(train_mode = True)[brain_name]
-        state = env_info.vector_observations[0]
+n_episodes = 2000
+max_t = 1000
+print_every = 100
+min_mean_score = 30
 
-        agent.reset()
-        score = 0
-        for t in range(max_t):
-            action = agent.act(state)
-            env_info = env.step(action)[brain_name]
-            next_state = env_info.vector_observations[0]
-            reward = env_info.rewards[0]
-            done = env_info.local_done[0]
+scores_deque = deque(maxlen = print_every)
+scores = []
+max_score = -np.Inf
+for i_episode in range(1, n_episodes + 1):
+    env_info = env.reset(train_mode = True)[brain_name]
+    state = env_info.vector_observations[0]
 
-            agent.step(state, action, reward, next_state, done)
-            state = next_state
-            score += reward
+    agent.reset()
+    score = 0
+    for t in range(max_t):
+        action = agent.act(state)
+        env_info = env.step(action)[brain_name]
+        next_state = env_info.vector_observations[0]
+        reward = env_info.rewards[0]
+        done = env_info.local_done[0]
 
-            if done:
-                break
+        agent.step(state, action, reward, next_state, done)
+        state = next_state
+        score += reward
 
-        scores_deque.append(score)
-        scores.append(score)
-        print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque), score), end="")
+        if done:
+            break
 
-        if i_episode % 100 == 0:
-            time1 = time()
+    scores_deque.append(score)
+    scores.append(score)
+    print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque), score), end="")
+
+    if i_episode % print_every == 0:
+        print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque)))
+    if len(scores_deque) == print_every:
+        mean_score = np.mean(scores_deque)
+        if mean_score >= min_mean_score:
             torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
             torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
-            print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
-            print('\rTime consumed: {:.2f}'.format(time1 - time0))
-    return scores
+            print('\rCheckpoint saved under average score: {:.2f}'.format(min_mean_score))
+    # print('\rTime consumed: {:.2f}'.format(time1 - time0))
 
-scores = ddpg()
+
+
 
 
 # In[ ]:
