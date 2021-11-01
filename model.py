@@ -6,10 +6,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Initilize the weight of target and main network
-def finit(size, fanin = None):
-    fanin = fanin or size[0]
-    lim = 1. / np.sqrt(fanin)
-    return torch.Tensor(size).uniform_(-lim, lim)
+def finit(layer):
+    fan_in = layer.weight.data.size()[0]
+    lim = 1. / np.sqrt(fan_in)
+    return (-lim, lim)
 
 # Construct the Actor network
 class Actor(nn.Module):
@@ -36,17 +36,17 @@ class Actor(nn.Module):
         self.network_reset()
 
     def network_reset(self):
-        self.input_layer.weight.data = finit(self.input_layer.weight.data.size())
-        self.output_layer.weight.data = finit(self.output_layer.weight.data.size())
+        self.input_layer.weight.data.uniform_(*finit(self.input_layer))
+        self.output_layer.weight.data.uniform_(*finit(self.output_layer))
         for i in range(len(self.hidden_layers)):
-            self.hidden_layers[i].weight.data = finit(self.hidden_layers[i].weight.data.size())
+            self.hidden_layers[i].weight.data.uniform_(*finit(self.hidden_layers[i]))
 
     def forward(self, state):
         x = F.relu(self.input_layer(state))
         for hidden_layer in self.hidden_layers:
             x = F.relu(hidden_layer(x))
         x = self.output_layer(x)
-        return F.tanh(x)
+        return torch.tanh(x)
 
 class Critic(nn.Module):
 
@@ -63,11 +63,11 @@ class Critic(nn.Module):
         self.network_reset()
 
     def network_reset(self):
-        self.pre_layer.weight.data = finit(self.pre_layer.weight.data.size())
-        self.input_layer.weight.data = finit(self.input_layer.weight.data.size())
-        self.output_layer.weight.data = finit(self.output_layer.weight.data.size())
+        self.pre_layer.weight.data.uniform_(*finit(self.pre_layer))
+        self.input_layer.weight.data.uniform_(*finit(self.input_layer))
+        self.output_layer.weight.data.uniform_(*finit(self.output_layer))
         for i in range(len(self.hidden_layers)):
-            self.hidden_layers[i].weight.data = finit(self.hidden_layers[i].weight.data.size())
+            self.hidden_layers[i].weight.data.uniform_(*finit(self.hidden_layers[i]))
 
     def forward(self, state, action):
         x_pre = F.relu(self.pre_layer(state))

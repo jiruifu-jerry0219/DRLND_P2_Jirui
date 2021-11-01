@@ -19,7 +19,7 @@ LR_ACTOR: learning rate for actor network
 LR_CRITIC: learning rate for cricit network
 (what's this?) WEIGHT_DECAY: L2 weight decay
 """
-BUFFER_SIZE = int(1e5)
+BUFFER_SIZE = int(1e6)
 BATCH_SIZE =128
 GAMMA = 0.99
 TAU = 1e-3
@@ -48,24 +48,24 @@ class Agent():
         self.actor_local = Actor(self.state_size,
                                 self.action_size,
                                 self.random_seed,
-                                hidden_dims = (256, 128)).to(device)
+                                hidden_dims = (400, 300, 200)).to(device)
         self.actor_target = Actor(self.state_size,
                                 self.action_size,
                                 self.random_seed,
-                                hidden_dims = (256, 128)).to(device)
+                                hidden_dims = (400, 300, 200)).to(device)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr = LR_ACTOR)
 
         # Define the critic network
         self.critic_local = Critic(self.state_size,
                                 action_size = self.action_size,
                                 seed = self.random_seed,
-                                fcs_size = 256,
-                                hidden_dims = (256, 128)).to(device)
+                                fcs_size =  400,
+                                hidden_dims = (300, 200)).to(device)
         self.critic_target = Critic(self.state_size,
                                 action_size = self.action_size,
                                 seed = self.random_seed,
-                                fcs_size = 256,
-                                hidden_dims = (256, 128)).to(device)
+                                fcs_size = 400,
+                                hidden_dims = (300, 200)).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr = LR_CRITIC)
 
         # Random noise for exploration
@@ -168,7 +168,8 @@ class ReplayBuffer:
         self.seed = random.seed(seed)
 
     def add(self, state, action, reward, next_state, done):
-        e = self.experience(state, action, reward, next_state, done)
+        for state, action, reward, next_state, done in zip(state, action, reward, next_state, done): # For the multiagent case
+            e = self.experience(state, action, reward, next_state, done)
         self.memory.append(e)
 
     def sample(self):
@@ -180,7 +181,7 @@ class ReplayBuffer:
         next_states = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float().to(device)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(device)
 
-        return(states, actions, rewards, next_states, dones)
+        return (states, actions, rewards, next_states, dones)
 
     def __len__(self):
         return len(self.memory)

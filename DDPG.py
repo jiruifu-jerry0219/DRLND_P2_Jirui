@@ -22,15 +22,11 @@ from unityagents import UnityEnvironment
 import numpy as np
 
 # select this option to load version 1 (with a single agent) of the environment
-env = UnityEnvironment(file_name='Reacher_Linux/Reacher.x86_64')
+# env = UnityEnvironment(file_name='Reacher_Linux/Reacher.x86_64')
+# env = UnityEnvironment(file_name='Reacher_One_Linux_NoVis/Reacher_One_Linux_NoVis.x86_64')
+env = UnityEnvironment(file_name = 'Reacher_Linux_NoVis/Reacher.x86_64')
 
-# select this option to load version 2 (with 20 agents) of the environment
-# env = UnityEnvironment(file_name='/data/Reacher_Linux_NoVis/Reacher.x86_64')
 
-
-# Environments contain **_brains_** which are responsible for deciding the actions of their associated agents. Here we check for the first brain available, and set it as the default brain we will be controlling from Python.
-
-# In[2]:
 
 
 # get the default brain
@@ -63,53 +59,7 @@ print('There are {} agents. Each observes a state with length: {}'.format(states
 print('The state for the first agent looks like:', states[0])
 
 
-# ### 3. Take Random Actions in the Environment
-#
-# In the next code cell, you will learn how to use the Python API to control the agent and receive feedback from the environment.
-#
-# Note that **in this coding environment, you will not be able to watch the agents while they are training**, and you should set `train_mode=True` to restart the environment.
 
-# In[5]:
-
-
-# env_info = env.reset(train_mode=True)[brain_name]      # reset the environment
-# states = env_info.vector_observations                  # get the current state (for each agent)
-# scores = np.zeros(num_agents)                          # initialize the score (for each agent)
-# while True:
-#     actions = np.random.randn(num_agents, action_size) # select an action (for each agent)
-#     actions = np.clip(actions, -1, 1)                  # all actions between -1 and 1
-#     env_info = env.step(actions)[brain_name]           # send all actions to tne environment
-#     next_states = env_info.vector_observations         # get next state (for each agent)
-#     rewards = env_info.rewards                         # get reward (for each agent)
-#     dones = env_info.local_done                        # see if episode finished
-#     scores += env_info.rewards                         # update the score (for each agent)
-#     states = next_states                               # roll over states to next time step
-#     if np.any(dones):                                  # exit loop if episode finished
-#         break
-# print('Total score (averaged over agents) this episode: {}'.format(np.mean(scores)))
-
-
-# When finished, you can close the environment.
-
-# In[6]:
-
-
-# env.close()
-
-
-# ### 4. It's Your Turn!
-#
-# Now it's your turn to train your own agent to solve the environment!  A few **important notes**:
-# - When training the environment, set `train_mode=True`, so that the line for resetting the environment looks like the following:
-# ```python
-# env_info = env.reset(train_mode=True)[brain_name]
-# ```
-# - To structure your work, you're welcome to work directly in this Jupyter notebook, or you might like to start over with a new file!  You can see the list of files in the workspace by clicking on **_Jupyter_** in the top left corner of the notebook.
-# - In this coding environment, you will not be able to watch the agents while they are training.  However, **_after training the agents_**, you can download the saved model weights to watch the agents on your own machine!
-
-# #### 4.1 Training with DDPG
-
-# In[4]:
 
 
 import numpy as np
@@ -136,8 +86,8 @@ agent = Agent(state_size, action_size, random_seed=0)
 # In[6]:
 
 
-n_episodes = 2000
-max_t = 1000
+n_episodes = 1000
+max_t = 1001
 print_every = 100
 min_mean_score = 30
 
@@ -146,43 +96,36 @@ scores = []
 max_score = -np.Inf
 for i_episode in range(1, n_episodes + 1):
     env_info = env.reset(train_mode = True)[brain_name]
-    state = env_info.vector_observations[0]
+    state = env_info.vector_observations
+
 
     agent.reset()
-    score = 0
+    score = np.zeros(num_agents)
     for t in range(max_t):
         action = agent.act(state)
         env_info = env.step(action)[brain_name]
-        next_state = env_info.vector_observations[0]
-        reward = env_info.rewards[0]
-        done = env_info.local_done[0]
+        next_state = env_info.vector_observations
+        reward = env_info.rewards
+        done = env_info.local_done
 
         agent.step(state, action, reward, next_state, done)
         state = next_state
         score += reward
 
-        if done:
+        if np.any(done): #for multiagent case, if single agent just use "if done:"
             break
 
-    scores_deque.append(score)
-    scores.append(score)
-    print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque), score), end="")
+    scores_deque.append(np.mean(score))
+    scores.append(np.mean(score))
+    print('\rEpisode {}\tScore: {:.2f}'.format(i_episode, np.mean(score)), end="")
 
     if i_episode % print_every == 0:
-        print('\rEpisode {}\tAverage Score: {:.2f}\tScore: {:.2f}'.format(i_episode, np.mean(scores_deque)))
-    if len(scores_deque) == print_every:
-        mean_score = np.mean(scores_deque)
-        if mean_score >= min_mean_score:
-            torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
-            torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
-            print('\rCheckpoint saved under average score: {:.2f}'.format(min_mean_score))
-    # print('\rTime consumed: {:.2f}'.format(time1 - time0))
+        print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_deque)))
+    if np.mean(scores_deque) >= min_mean_score:
+        print('\nEnvironment solved in {} episodes', format(i_episode))
+        torch.save(agent.actor_local.state_dict(), 'checkpoint_actor.pth')
+        torch.save(agent.critic_local.state_dict(), 'checkpoint_critic.pth')
 
-
-
-
-
-# In[ ]:
 
 
 fig = plt.figure()
